@@ -4,15 +4,10 @@ from tkinter.filedialog import askopenfilenames, askdirectory
 import cv2
 from PIL import Image, ImageTk
 from cv2_enumerate_cameras import enumerate_cameras
-
 from ObjectDetector import ObjectDetector
 
 obj_detector = ObjectDetector('yolov8n.pt')
 app = Tk()
-
-app.bind('<Escape>', lambda e: app.quit())
-
-tool_menu = Frame(borderwidth=1, relief=SOLID)
 
 img_filetypes = ['jpg', 'jpeg', 'png']
 vid_filetypes = ['mp4', 'mov', 'mkv', 'm4v', 'avi']
@@ -32,21 +27,21 @@ filetypes = [
 # CAP_MSMF    Microsoft Media Foundation
 # CAP_DSHOW   DirectShow
 api_preference = cv2.CAP_DSHOW
+camera_is_opened = False
 
 
 def process_files():
-    file_path_list = process_input_files_enter.get().split(', ')
+    file_path_list = process_input_files_enter.get().split(',')
     progress_step = 100 / len(file_path_list)
+    progress_bar['value'] = 0
     for file_path in file_path_list:
-        print('Process: ' + file_path)
         name, extension = file_path.split('/')[-1].split('.')
         output_path = process_output_files_enter.get() + '/' + name
         if extension in img_filetypes:
-            obj_detector.process_image(file_path, output_path + '.jpg')
+            obj_detector.process_image(file_path.strip(), output_path + '.jpg')
         elif extension in vid_filetypes:
-            obj_detector.process_video(file_path, output_path + '.mp4')
+            obj_detector.process_video(file_path.strip(), output_path + '.mp4')
         progress_bar['value'] += progress_step
-        print(file_path + ' processed')
 
 
 def get_input_files_from_filedialog():
@@ -77,18 +72,21 @@ def draw_frame(source):
 
 def open_camera():
     global camera_is_opened
-    if camera_is_opened:
-        camera_is_opened = False
-    else:
-        camera_is_opened = True
-        draw_frame(obj_detector.process_camera(int(camera_list.get().split(':')[0])))
+    if camera_list.get():
+        if camera_is_opened:
+            camera_is_opened = False
+        else:
+            camera_is_opened = True
+            draw_frame(obj_detector.process_camera(int(camera_list.get().split(':')[0])))
 
 
 label_widget = Label(app)
+tool_menu = Frame(borderwidth=1, relief=SOLID)
+
+
 label_widget.grid(row=0, column=0)
 tool_menu.grid(row=0, column=1)
 
-camera_is_opened = False
 camera_menu = Frame(tool_menu, borderwidth=1, relief=SOLID)
 camera_lable = Label(camera_menu, text='Камера')
 camera_list = Combobox(camera_menu, values=get_camera_list(), width=50)
